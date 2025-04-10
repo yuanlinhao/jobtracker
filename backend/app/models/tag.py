@@ -1,17 +1,10 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Table
+from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
-
 from app.database import Base
-
-application_tags = Table(
-    "application_tags",
-    Base.metadata,
-    Column("application_id", UUID(as_uuid=True), ForeignKey("applications.id"), primary_key=True),
-    Column("tag_id", UUID(as_uuid=True), ForeignKey("tags.id"), primary_key=True)
-)
+from app.models.application_tag import ApplicationTag  # Import the association model
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -21,9 +14,11 @@ class Tag(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    #Relationship
-    applications = relationship(
-        "Application",
-        secondary=application_tags,
-        backref="tags"
+    user = relationship("User", back_populates="tags")
+
+    # Use the class-based association instead of a secondary Table
+    application_tags = relationship(
+        "ApplicationTag",
+        back_populates="tag",
+        cascade="all, delete-orphan"
     )

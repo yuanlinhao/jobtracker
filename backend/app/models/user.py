@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, DateTime
 import uuid
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID
-
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class User(Base):
@@ -13,3 +13,15 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="user", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    applications = relationship(
+        "Application",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    tags = relationship(
+        "Tag",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

@@ -9,12 +9,12 @@ from app.core.security import SECRET_KEY, ALGORITHM
 
 bearer_scheme = HTTPBearer()
 
-# def get_db():
-# db = SessionLocal()
-# try:
-#     yield db
-# finally:
-#     db.close()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def get_current_user(
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
