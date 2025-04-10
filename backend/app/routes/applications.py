@@ -40,6 +40,16 @@ def create_application(
 
     new_app = Application(**app_data, user_id=current_user.id)
 
+    seen = set()
+    for tag_data in app_in.tags or []:
+        key = (tag_data.tag_id, tag_data.field)
+        if key in seen:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Duplicate tag '{tag_data.tag_id}' for field '{tag_data.field}'"
+            )
+        seen.add(key)
+
     if app_in.tags:
         for tag_data in app_in.tags:
             tag = db.query(Tag).filter(Tag.id == tag_data.tag_id, Tag.user_id == current_user.id).first()
@@ -154,27 +164,34 @@ def update_application(
     update_data = app_in.dict(exclude_unset=True, exclude={"tags"})
     if "url" in update_data and update_data["url"] is not None:
         update_data["url"] = str(update_data["url"])
-
     for key, value in update_data.items():
         setattr(app, key, value)
 
-    if app_in.tags is not None:
-        app.application_tags.clear()
-        for tag_data in app_in.tags:
-            tag = db.query(Tag).filter(Tag.id == tag_data.tag_id, Tag.user_id == current_user.id).first()
-            if not tag:
-                raise HTTPException(status_code=400, detail=f"Invalid tag ID: {tag_data.tag_id}")
-            assoc = ApplicationTag(tag_id=tag.id, field=tag_data.field)
-            app.application_tags.append(assoc)
+    seen = set()
+    for tag_data in app_in.tags or []:
+        key = (tag_data.tag_id, tag_data.field)
+        if key in seen:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Duplicate tag '{tag_data.tag_id}' for field '{tag_data.field}'"
+            )
+        seen.add(key)
 
-            for assoc in app.application_tags:
-                tag = db.query(Tag).filter(Tag.id == assoc.tag_id).first()
-                if tag and assoc.field in Application.__table__.columns:
-                    setattr(app, assoc.field, tag.name)
+    app.application_tags.clear()
+    for tag_data in app_in.tags or []:
+        tag = db.query(Tag).filter(Tag.id == tag_data.tag_id, Tag.user_id == current_user.id).first()
+        if not tag:
+            raise HTTPException(status_code=400, detail=f"Invalid tag ID: {tag_data.tag_id}")
+        assoc = ApplicationTag(tag_id=tag.id, field=tag_data.field)
+        app.application_tags.append(assoc)
+
+    # Apply tag values to taggable fields (like status or location)
+    apply_tags_to_application_fields(app, db)
 
     db.commit()
     db.refresh(app)
 
+    # Rebuild tag map for output
     tag_map = {}
     for atag in app.application_tags:
         tag_out = TagOut.from_orm(atag.tag)
@@ -192,7 +209,6 @@ def update_application(
         updated_at=app.updated_at,
         tags=tag_map
     )
-
 
 @router.delete("/{application_id}", status_code=204)
 def delete_application(
