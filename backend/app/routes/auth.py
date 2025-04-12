@@ -4,18 +4,10 @@ from app.database import SessionLocal
 from app.models.user import User
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.auth import get_current_user
-from pydantic import BaseModel, EmailStr
 from datetime import timedelta
+from app.schemas.user import UserSignup, UserLogin, UserOut, UserInDB
 
 router = APIRouter()
-
-class UserSignup(BaseModel):
-    email: EmailStr
-    password: str
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
 
 def get_db():
     db = SessionLocal()
@@ -43,19 +35,19 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
     if not user or not verify_password(user_in.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    user_in_db = UserInDB.from_orm(user)
+
     access_token_expires = timedelta(minutes=30)
     token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": user.role},
+        data={
+              "sub": str(user.id), 
+              "email": user_in_db.email, 
+              "is_admin": user.is_admin
+              },
         expires_delta=access_token_expires
     )
     return {"access_token": token, "token_type": "bearer"}
 
-@router.post("/me")
+@router.post("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
-    return {
-        "email": current_user.email,
-        "id": current_user.id,
-        "role": current_user.role,
-        "created_at": current_user.created_at,
-        
-    }
+    return current_user
