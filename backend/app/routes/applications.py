@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sqlalchemy import desc
 import logging
 
@@ -13,6 +13,7 @@ from app.models.user import User
 from app.database import SessionLocal
 from app.core.auth import get_current_user
 from app.schemas.tag import TagOut
+from app.utils.pagination import get_pagination_params
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s")
@@ -84,15 +85,27 @@ def create_application(
         tags=tag_map
     )
 
-@router.get("/", response_model=List[ApplicationOut])
+@router.get("/", response_model=Dict[str, object])
 def get_applications(
+    pagination: Dict[str, int] = Depends(get_pagination_params),
+    status: Optional[str] = Query(None, description="Filter by application status"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    base_query = db.query(Application).filter(
+        Application.user_id == current_user.id,
+        Application.is_deleted == False
+    )
+    if status:
+        base_query = base_query.filter(Application.status == status)
+
+    total_count = base_query.count()
+
     apps = (
-        db.query(Application)
-        .filter(Application.user_id == current_user.id, Application.is_deleted == False)
+        base_query
         .order_by(desc(Application.created_at))
+        .offset(pagination["offset"])
+        .limit(pagination["limit"])
         .all()
     )
 
@@ -100,48 +113,7 @@ def get_applications(
     for app in apps:
         tags_by_field = {}
         for assoc in app.application_tags:
-            field = assoc.field
-            tag = assoc.tag
-            if field not in tags_by_field:
-                tags_by_field[field] = []
-            tags_by_field[field].append(TagOut.from_orm(tag))
-
-        app_data = ApplicationOut(
-            id=app.id,
-            company=app.company,
-            position=app.position,
-            status=app.status,
-            location=app.location,
-            url=app.url,
-            notes=app.notes,
-            created_at=app.created_at,
-            updated_at=app.updated_at,
-            tags=tags_by_field
-        )
-        result.append(app_data)
-
-    logger.info(f"User {current_user.id} fetched {len(apps)} applications")
-    return result
-
-@router.get("/deleted", response_model=List[ApplicationOut])
-def get_deleted_applications(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    apps = (
-        db.query(Application)
-        .filter(Application.user_id == current_user.id, Application.is_deleted == True)
-        .order_by(desc(Application.updated_at))
-        .all()
-    )
-
-    result = []
-    for app in apps:
-        tags_by_field = {}
-        for assoc in app.application_tags:
-            field = assoc.field
-            tag = assoc.tag
-            tags_by_field.setdefault(field, []).append(TagOut.from_orm(tag))
+            tags_by_field.setdefault(assoc.field, []).append(TagOut.from_orm(assoc.tag))
 
         result.append(ApplicationOut(
             id=app.id,
@@ -156,8 +128,63 @@ def get_deleted_applications(
             tags=tags_by_field
         ))
 
-    logger.info(f"User {current_user.id} viewed {len(result)} deleted applications")
-    return result
+    logger.info(f"User {current_user.id} fetched {len(result)} applications (offset={pagination['offset']}, limit={pagination['limit']}, status={status})")
+
+    return {
+        "total": total_count,
+        "applications": result
+    }
+
+@router.get("/deleted", response_model=Dict[str, object])
+def get_deleted_applications(
+    pagination: Dict[str, int] = Depends(get_pagination_params),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    base_query = db.query(Application).filter(
+        Application.user_id == current_user.id,
+        Application.is_deleted == True
+    )
+
+    if status:
+        base_query = base_query.filter(Application.status == status)
+
+    total_count = base_query.count()
+
+    apps = (
+        base_query
+        .order_by(desc(Application.updated_at))
+        .offset(pagination["offset"])
+        .limit(pagination["limit"])
+        .all()
+    )
+
+    result = []
+    for app in apps:
+        tags_by_field = {}
+        for assoc in app.application_tags:
+            tags_by_field.setdefault(assoc.field, []).append(TagOut.from_orm(assoc.tag))
+
+        result.append(ApplicationOut(
+            id=app.id,
+            company=app.company,
+            position=app.position,
+            status=app.status,
+            location=app.location,
+            url=app.url,
+            notes=app.notes,
+            created_at=app.created_at,
+            updated_at=app.updated_at,
+            tags=tags_by_field
+        ))
+
+    logger.info(f"User {current_user.id} viewed {len(result)} deleted apps (offset={pagination['offset']}, status={status})")
+
+    return {
+        "total": total_count,
+        "applications": result
+    }
 
 @router.get("/{application_id}", response_model=ApplicationOut)
 def get_application_by_id(
