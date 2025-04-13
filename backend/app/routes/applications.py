@@ -89,7 +89,12 @@ def get_applications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    apps = db.query(Application).filter(Application.user_id == current_user.id).order_by(desc(Application.created_at)).all()
+    apps = (
+        db.query(Application)
+        .filter(Application.user_id == current_user.id, Application.is_deleted == False)
+        .order_by(desc(Application.created_at))
+        .all()
+    )
 
     result = []
     for app in apps:
@@ -118,6 +123,41 @@ def get_applications(
     logger.info(f"User {current_user.id} fetched {len(apps)} applications")
     return result
 
+@router.get("/deleted", response_model=List[ApplicationOut])
+def get_deleted_applications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    apps = (
+        db.query(Application)
+        .filter(Application.user_id == current_user.id, Application.is_deleted == True)
+        .order_by(desc(Application.updated_at))
+        .all()
+    )
+
+    result = []
+    for app in apps:
+        tags_by_field = {}
+        for assoc in app.application_tags:
+            field = assoc.field
+            tag = assoc.tag
+            tags_by_field.setdefault(field, []).append(TagOut.from_orm(tag))
+
+        result.append(ApplicationOut(
+            id=app.id,
+            company=app.company,
+            position=app.position,
+            status=app.status,
+            location=app.location,
+            url=app.url,
+            notes=app.notes,
+            created_at=app.created_at,
+            updated_at=app.updated_at,
+            tags=tags_by_field
+        ))
+
+    logger.info(f"User {current_user.id} viewed {len(result)} deleted applications")
+    return result
 
 @router.get("/{application_id}", response_model=ApplicationOut)
 def get_application_by_id(
@@ -125,7 +165,11 @@ def get_application_by_id(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    app = db.query(Application).filter(Application.id == application_id).first()
+    app = (
+        db.query(Application)
+        .filter(Application.id == application_id, Application.is_deleted == False)
+        .first()
+    )
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
     if app.user_id != current_user.id:
@@ -153,7 +197,6 @@ def get_application_by_id(
     logger.info(f"User {current_user.id} accessed application {app.id}")
     return app_data
 
-
 @router.patch("/{application_id}", response_model=ApplicationOut)
 def update_application(
     application_id: UUID,
@@ -167,6 +210,8 @@ def update_application(
         raise HTTPException(status_code=404, detail="Application not found")
     if app.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this application")
+    if app.is_deleted:
+        raise HTTPException(status_code=400, detail="Cannot update a deleted application")
 
     update_data = app_in.dict(exclude_unset=True, exclude={"tags"})
     if "url" in update_data and update_data["url"] is not None:
@@ -228,7 +273,50 @@ def delete_application(
     if app.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this application")
 
-    db.delete(app)
+    app.is_deleted = True
     db.commit()
     logger.info(f"User {current_user.id} deleted application {app.id}")
+    return
+
+@router.patch("/{application_id}/restore", status_code=200)
+def restore_application(
+    application_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    app = db.query(Application).filter(Application.id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    if app.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to restore this application")
+
+    if not app.is_deleted:
+        raise HTTPException(status_code=400, detail="Application is not deleted")
+
+    app.is_deleted = False
+    db.commit()
+    logger.info(f"User {current_user.id} restored application {app.id}")
+    return {"message": f"Application {app.id} has been restored"}
+
+
+@router.delete("/{application_id}/permanent", status_code=204)
+def permanent_delete_application(
+    application_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    app = db.query(Application).filter(Application.id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    if app.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if not app.is_deleted:
+        raise HTTPException(
+            status_code=400,
+            detail="You must soft-delete the application before permanently deleting it."
+        )
+
+    db.delete(app)
+    db.commit()
+    logger.info(f"User {current_user.id} permanently deleted application {app.id}")
     return
