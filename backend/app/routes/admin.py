@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from uuid import UUID
+import logging
 
 from app.database import SessionLocal
 from app.models.user import User
 from app.core.auth import get_current_user
 from app.schemas.user import UserOut
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s")
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -27,6 +31,7 @@ def get_all_users(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin)
 ):
+    logger.info(f"Admin {current_admin.email} fetched all users.")
     users = db.query(User).all()
     return users
 
@@ -45,4 +50,5 @@ def delete_user(
 
     db.delete(user)
     db.commit()
+    logger.info(f"Admin {current_admin.email} deleted user {user.email} (id: {user.id})")
     return

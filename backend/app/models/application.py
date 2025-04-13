@@ -5,8 +5,9 @@ import uuid
 from datetime import datetime
 from app.database import Base
 from app.models.application_tag import ApplicationTag
+from app.models.mixins import TimestampMixin
 
-class Application(Base):
+class Application(Base, TimestampMixin):
     __tablename__ = "applications"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

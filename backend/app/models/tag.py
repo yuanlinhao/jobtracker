@@ -4,9 +4,10 @@ from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 from app.database import Base
-from app.models.application_tag import ApplicationTag  # Import the association model
+from app.models.application_tag import ApplicationTag
+from app.models.mixins import TimestampMixin
 
-class Tag(Base):
+class Tag(Base, TimestampMixin):
     __tablename__ = "tags"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -16,7 +17,6 @@ class Tag(Base):
 
     user = relationship("User", back_populates="tags")
 
-    # Use the class-based association instead of a secondary Table
     application_tags = relationship(
         "ApplicationTag",
         back_populates="tag",

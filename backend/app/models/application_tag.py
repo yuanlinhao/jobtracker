@@ -4,8 +4,9 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 from sqlalchemy import Enum as SqlEnum
 from app.constants.tag_fields import TaggableField
+from app.models.mixins import TimestampMixin
 
-class ApplicationTag(Base):
+class ApplicationTag(Base, TimestampMixin):
     __tablename__ = "application_tags"
 
     application_id = Column(UUID(as_uuid=True), ForeignKey("applications.id"), primary_key=True)

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List, Dict
 from sqlalchemy import desc
+import logging
 
 from app.schemas.application import ApplicationCreate, ApplicationOut, ApplicationUpdate
 from app.models.application import Application
@@ -12,6 +13,9 @@ from app.models.user import User
 from app.database import SessionLocal
 from app.core.auth import get_current_user
 from app.schemas.tag import TagOut
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s")
 
 router = APIRouter()
 
@@ -61,6 +65,7 @@ def create_application(
     db.add(new_app)
     db.commit()
     db.refresh(new_app)
+    logger.info(f"User {current_user.id} created application {new_app.id}")
     tag_map = {}
     for assoc in new_app.application_tags:
         field = assoc.field
@@ -110,6 +115,7 @@ def get_applications(
         )
         result.append(app_data)
 
+    logger.info(f"User {current_user.id} fetched {len(apps)} applications")
     return result
 
 
@@ -144,6 +150,7 @@ def get_application_by_id(
         tags=tag_map
     )
 
+    logger.info(f"User {current_user.id} accessed application {app.id}")
     return app_data
 
 
@@ -185,13 +192,12 @@ def update_application(
         assoc = ApplicationTag(tag_id=tag.id, field=tag_data.field)
         app.application_tags.append(assoc)
 
-    # Apply tag values to taggable fields (like status or location)
     apply_tags_to_application_fields(app, db)
 
     db.commit()
     db.refresh(app)
+    logger.info(f"User {current_user.id} updated application {app.id}")
 
-    # Rebuild tag map for output
     tag_map = {}
     for atag in app.application_tags:
         tag_out = TagOut.from_orm(atag.tag)
@@ -224,4 +230,5 @@ def delete_application(
 
     db.delete(app)
     db.commit()
+    logger.info(f"User {current_user.id} deleted application {app.id}")
     return

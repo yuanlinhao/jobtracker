@@ -2,12 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
+import logging
 
 from app.models.tag import Tag
 from app.models.user import User
 from app.database import SessionLocal
 from app.schemas.tag import TagCreate, TagOut
 from app.core.auth import get_current_user
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s")
 
 router = APIRouter()
 
@@ -28,6 +32,7 @@ def create_tag(
     db.add(tag)
     db.commit()
     db.refresh(tag)
+    logger.info(f"User {current_user.email} created tag '{tag.name}' (id: {tag.id})")
     return tag
 
 @router.get("/", response_model=List[TagOut])
@@ -35,7 +40,9 @@ def get_tags(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(Tag).filter(Tag.user_id == current_user.id).all()
+    tags = db.query(Tag).filter(Tag.user_id == current_user.id).all()
+    logger.info(f"User {current_user.email} fetched {len(tags)} tags.")
+    return tags
 
 @router.delete("/{tag_id}", status_code=204)
 def delete_tag(
@@ -45,8 +52,10 @@ def delete_tag(
 ):
     tag = db.query(Tag).filter(Tag.id == tag_id, Tag.user_id == current_user.id).first()
     if not tag:
+        logger.warning(f"User {current_user.email} tried to delete non-existent tag {tag_id}")
         raise HTTPException(status_code=404, detail="Tag not found")
     
     db.delete(tag)
     db.commit()
+    logger.info(f"User {current_user.email} deleted tag '{tag.name}' (id: {tag.id})")
     return
