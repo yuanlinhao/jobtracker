@@ -89,26 +89,55 @@ def create_application(
 def get_applications(
     pagination: Dict[str, int] = Depends(get_pagination_params),
     status: Optional[str] = Query(None, description="Filter by application status"),
+    tag_ids: Optional[List[UUID]] = Query(None),
+    logic: Optional[str] = Query("OR", regex="^(OR|AND)$", description="Logic for tag filtering (OR/AND)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    base_query = db.query(Application).filter(
+    taggable_fields = {"location", "position", "company"}
+
+    # Base query: user-owned, non-deleted apps
+    query = db.query(Application).filter(
         Application.user_id == current_user.id,
         Application.is_deleted == False
     )
+
+    # Optional status filter
     if status:
-        base_query = base_query.filter(Application.status == status)
+        query = query.filter(Application.status == status)
 
-    total_count = base_query.count()
+    # Optional tag filtering
+    if tag_ids:
+        if logic == "AND":
+            for tag_id in tag_ids:
+                query = query.filter(
+                    Application.application_tags.any(
+                        ApplicationTag.tag_id == tag_id,
+                        ApplicationTag.field.in_(taggable_fields)
+                    )
+                )
+        else:  # OR logic (default)
+            query = query.filter(
+                Application.application_tags.any(
+                    and_(
+                        ApplicationTag.tag_id.in_(tag_ids),
+                        ApplicationTag.field.in_(taggable_fields)
+                    )
+                )
+            )
 
+    # Count after all filters are applied
+    total_count = query.count()
+
+    # Fetch paginated apps
     apps = (
-        base_query
-        .order_by(desc(Application.created_at))
+        query.order_by(desc(Application.created_at))
         .offset(pagination["offset"])
         .limit(pagination["limit"])
         .all()
     )
 
+    # Format output
     result = []
     for app in apps:
         tags_by_field = {}
@@ -128,7 +157,7 @@ def get_applications(
             tags=tags_by_field
         ))
 
-    logger.info(f"User {current_user.id} fetched {len(result)} applications (offset={pagination['offset']}, limit={pagination['limit']}, status={status})")
+    logger.info(f"User {current_user.id} fetched {len(result)} applications (offset={pagination['offset']}, limit={pagination['limit']}, status={status}, tag_ids={tag_ids}, logic={logic})")
 
     return {
         "total": total_count,
@@ -138,23 +167,22 @@ def get_applications(
 @router.get("/deleted", response_model=Dict[str, object])
 def get_deleted_applications(
     pagination: Dict[str, int] = Depends(get_pagination_params),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    status: Optional[str] = Query(None, description="Filter by status (optional)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    base_query = db.query(Application).filter(
+    query = db.query(Application).filter(
         Application.user_id == current_user.id,
         Application.is_deleted == True
     )
 
     if status:
-        base_query = base_query.filter(Application.status == status)
+        query = query.filter(Application.status == status)
 
-    total_count = base_query.count()
+    total_count = query.count()
 
     apps = (
-        base_query
-        .order_by(desc(Application.updated_at))
+        query.order_by(desc(Application.updated_at))
         .offset(pagination["offset"])
         .limit(pagination["limit"])
         .all()
@@ -179,7 +207,10 @@ def get_deleted_applications(
             tags=tags_by_field
         ))
 
-    logger.info(f"User {current_user.id} viewed {len(result)} deleted apps (offset={pagination['offset']}, status={status})")
+    logger.info(
+        f"User {current_user.id} viewed {len(result)} deleted apps "
+        f"(offset={pagination['offset']}, limit={pagination['limit']}, status={status})"
+    )
 
     return {
         "total": total_count,
