@@ -20,6 +20,7 @@ app.include_router(applications.router, prefix="/applications", tags=["Applicati
 app.include_router(tags.router, prefix="/tags", tags=["Tags"])
 app.include_router(admin.router)
 app.include_router(admin_tools.router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],

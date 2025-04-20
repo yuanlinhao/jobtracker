@@ -22,4 +22,3 @@ class ApplicationTagOut(BaseModel):
     id: UUID
     name: str
     field: TaggableField
-    

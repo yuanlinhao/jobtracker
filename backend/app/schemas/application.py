@@ -46,3 +46,15 @@ class ApplicationUpdate(BaseModel):
     model_config = {
         "extra": "forbid"
     }
+
+class ApplicationSummaryOut(BaseModel):
+    id: UUID
+    company: str
+    position: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    tag_ids: List[UUID]
+
+    class Config:
+        from_attributes = True

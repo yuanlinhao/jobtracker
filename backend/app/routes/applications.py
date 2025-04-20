@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from uuid import UUID
 from typing import List, Dict, Optional
-from sqlalchemy import desc
+from sqlalchemy import desc, and_
 import logging
 
-from app.schemas.application import ApplicationCreate, ApplicationOut, ApplicationUpdate
+from app.schemas.application import ApplicationCreate, ApplicationOut, ApplicationUpdate, ApplicationSummaryOut
 from app.models.application import Application
 from app.models.application_tag import ApplicationTag
 from app.models.tag import Tag
@@ -89,47 +89,19 @@ def create_application(
 def get_applications(
     pagination: Dict[str, int] = Depends(get_pagination_params),
     status: Optional[str] = Query(None, description="Filter by application status"),
-    tag_ids: Optional[List[UUID]] = Query(None),
-    logic: Optional[str] = Query("OR", regex="^(OR|AND)$", description="Logic for tag filtering (OR/AND)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    taggable_fields = {"location", "position", "company"}
-
-    # Base query: user-owned, non-deleted apps
     query = db.query(Application).filter(
         Application.user_id == current_user.id,
         Application.is_deleted == False
     )
 
-    # Optional status filter
     if status:
         query = query.filter(Application.status == status)
 
-    # Optional tag filtering
-    if tag_ids:
-        if logic == "AND":
-            for tag_id in tag_ids:
-                query = query.filter(
-                    Application.application_tags.any(
-                        ApplicationTag.tag_id == tag_id,
-                        ApplicationTag.field.in_(taggable_fields)
-                    )
-                )
-        else:  # OR logic (default)
-            query = query.filter(
-                Application.application_tags.any(
-                    and_(
-                        ApplicationTag.tag_id.in_(tag_ids),
-                        ApplicationTag.field.in_(taggable_fields)
-                    )
-                )
-            )
-
-    # Count after all filters are applied
     total_count = query.count()
 
-    # Fetch paginated apps
     apps = (
         query.order_by(desc(Application.created_at))
         .offset(pagination["offset"])
@@ -137,27 +109,23 @@ def get_applications(
         .all()
     )
 
-    # Format output
-    result = []
-    for app in apps:
-        tags_by_field = {}
-        for assoc in app.application_tags:
-            tags_by_field.setdefault(assoc.field, []).append(TagOut.from_orm(assoc.tag))
-
-        result.append(ApplicationOut(
+    result = [
+        ApplicationSummaryOut(
             id=app.id,
             company=app.company,
             position=app.position,
             status=app.status,
-            location=app.location,
-            url=app.url,
-            notes=app.notes,
             created_at=app.created_at,
             updated_at=app.updated_at,
-            tags=tags_by_field
-        ))
+            tag_ids=[assoc.tag_id for assoc in app.application_tags]
+        )
+        for app in apps
+    ]
 
-    logger.info(f"User {current_user.id} fetched {len(result)} applications (offset={pagination['offset']}, limit={pagination['limit']}, status={status}, tag_ids={tag_ids}, logic={logic})")
+    logger.info(
+        f"User {current_user.id} fetched {len(result)} applications "
+        f"(offset={pagination['offset']}, limit={pagination['limit']}, status={status})"
+    )
 
     return {
         "total": total_count,
@@ -277,25 +245,25 @@ def update_application(
     for key, value in update_data.items():
         setattr(app, key, value)
 
-    seen = set()
-    for tag_data in app_in.tags or []:
-        key = (tag_data.tag_id, tag_data.field)
-        if key in seen:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Duplicate tag '{tag_data.tag_id}' for field '{tag_data.field}'"
-            )
-        seen.add(key)
+    if app_in.tags is not None:
+        seen = set()
+        app.application_tags.clear()
+        for tag_data in app_in.tags:
+            key = (tag_data.tag_id, tag_data.field)
+            if key in seen:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Duplicate tag '{tag_data.tag_id}' for field '{tag_data.field}'"
+                )
+            seen.add(key)
 
-    app.application_tags.clear()
-    for tag_data in app_in.tags or []:
-        tag = db.query(Tag).filter(Tag.id == tag_data.tag_id, Tag.user_id == current_user.id).first()
-        if not tag:
-            raise HTTPException(status_code=400, detail=f"Invalid tag ID: {tag_data.tag_id}")
-        assoc = ApplicationTag(tag_id=tag.id, field=tag_data.field)
-        app.application_tags.append(assoc)
+            tag = db.query(Tag).filter(Tag.id == tag_data.tag_id, Tag.user_id == current_user.id).first()
+            if not tag:
+                raise HTTPException(status_code=400, detail=f"Invalid tag ID: {tag_data.tag_id}")
+            assoc = ApplicationTag(tag_id=tag.id, field=tag_data.field)
+            app.application_tags.append(assoc)
 
-    apply_tags_to_application_fields(app, db)
+        apply_tags_to_application_fields(app, db)
 
     db.commit()
     db.refresh(app)

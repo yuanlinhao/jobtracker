@@ -1,0 +1,3 @@
+uvicorn app.main:app --reload
+
+psql -d jobtracker_dev
