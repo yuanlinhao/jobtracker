@@ -21,7 +21,7 @@ def get_db():
         db.close()
 
 @router.post("/signup")
-def signup(user_in: UserSignup, db: Session = Depends(get_db)):
+def signup(user_in: UserSignup, response: Response, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user_in.email).first()
     if existing_user:
         logger.warning(f"Signup attempt with existing email: {user_in.email}")
@@ -32,8 +32,19 @@ def signup(user_in: UserSignup, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    token = create_access_token({"sub": str(new_user.id)})
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="strict"
+    )
+
     logger.info(f"New user signed up with email:{new_user.email} (id:{new_user.id})")
-    return {"email": new_user.email, "id": new_user.id}
+    return {"message": "Signup successful"}
 
 @router.post("/login")
 def login(user_in: UserLogin, response: Response, db: Session = Depends(get_db)):

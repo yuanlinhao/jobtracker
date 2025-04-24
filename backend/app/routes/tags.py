@@ -10,6 +10,7 @@ from app.database import SessionLocal
 from app.schemas.tag import TagCreate, TagOut
 from app.core.auth import get_current_user
 
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s")
 

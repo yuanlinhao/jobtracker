@@ -17,8 +17,10 @@ class UserOut(BaseModel):
     created_at: datetime
     is_admin: bool
 
+
     class Config:
         from_attributes = True
 
 class UserInDB(UserOut):
     hashed_password: str
+    

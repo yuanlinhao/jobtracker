@@ -39,7 +39,8 @@ def create_application(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    app_data = app_in.dict(exclude={"tags"})
+    print("Received payload:", app_in.dict())  # Add this line
+    app_data = app_in.dict(exclude_unset=True, exclude={"tags"})
     if app_data.get("url"):
         app_data["url"] = str(app_data["url"])
 

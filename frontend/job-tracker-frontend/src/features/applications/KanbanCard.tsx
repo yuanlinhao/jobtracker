@@ -2,7 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTagStore } from "../../store/useTagStore";
-import { useSelectionStore } from "../../store/useSelectionStore"; // 🆕 selection store
+import { useSelectionStore } from "../../store/useSelectionStore";
 import { formatDistance, isValid, parseISO } from "date-fns";
 
 type Props = {
@@ -52,45 +52,45 @@ const KanbanCard = ({ app, activeId }: Props) => {
 
   const { selectedIds, toggleSelection } = useSelectionStore();
   const isSelected = selectedIds.includes(app.id);
-
   const isGroupDrag = selectedIds.includes(app.id) && activeId !== null;
   const shouldApplyTransform = app.id === activeId || isGroupDrag;
+
   const style = {
-  transform: shouldApplyTransform && transform ? CSS.Translate.toString(transform) : undefined,
-  opacity: isDragging || isGroupDrag ? 0.5 : 1,
-  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    transform: shouldApplyTransform && transform ? CSS.Translate.toString(transform) : undefined,
+    opacity: isDragging || isGroupDrag ? 0.5 : 1,
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
   };
 
   const localUpdatedAt = parseISO(app.updated_at);
-  console.log("parsed", app.updated_at);
-  console.log("parsed →", parseISO(app.updated_at).toString());
-  console.log("now      →", new Date().toString());
-
   const colorClass = getStalenessColor(localUpdatedAt, app.is_deleted);
   const stalenessLabel = getStalenessLabel(localUpdatedAt, app.is_deleted);
   const updatedAgo = isValid(localUpdatedAt)
     ? formatDistance(localUpdatedAt, new Date(), { addSuffix: true })
     : "unknown";
 
-  const tagNames =
-    tags.length > 0
+    const tagNames =
+    tags.length > 0 && Array.isArray(app.tag_ids)
       ? app.tag_ids
           .map((id) => tags.find((t) => t.id === id)?.name)
           .filter(Boolean) as string[]
       : [];
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const isMulti = e.ctrlKey || e.metaKey;
-    
-    if (isMulti) {
-    toggleSelection(app.id, isMulti);
-    } else {
-        navigate(`/dashboard/app/${app.id}`, {
-          state: { backgroundLocation: location },
-        });
-    }
-  };
+      const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+      
+        if (app.is_deleted) return;
+      
+        const isMulti = e.ctrlKey || e.metaKey;
+      
+        if (isMulti) {
+          toggleSelection(app.id, isMulti);
+        } else {
+          navigate(`/dashboard/app/${app.id}`, {
+            state: { backgroundLocation: location },
+          });
+        }
+      };
+      
 
   return (
     <div
@@ -124,8 +124,8 @@ const KanbanCard = ({ app, activeId }: Props) => {
         </svg>
       </div>
 
-      {/* Clickable content */}
-      <div>
+      {/* Text content */}
+      <div className="flex flex-col items-start text-left select-none">
         <div className="mb-1 text-sm font-semibold text-gray-800">{app.position}</div>
         <div className="text-xs text-gray-500">{app.company}</div>
 
@@ -134,7 +134,7 @@ const KanbanCard = ({ app, activeId }: Props) => {
             {tagNames.map((name) => (
               <span
                 key={name}
-                className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full"
+                className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full cursor-default"
               >
                 {name}
               </span>
@@ -142,7 +142,7 @@ const KanbanCard = ({ app, activeId }: Props) => {
           </div>
         )}
 
-        <div className="text-[10px] text-gray-400 text-right mt-2" title={stalenessLabel}>
+        <div className="text-[10px] text-gray-400 mt-2 ml-auto" title={stalenessLabel}>
           {updatedAgo !== "unknown" && <span>{updatedAgo}</span>}
         </div>
       </div>

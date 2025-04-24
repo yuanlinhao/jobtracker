@@ -4,18 +4,23 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
+  useParams,
 } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 
 import AuthForm from "./features/auth/AuthForm";
 import Dashboard from "./features/applications/Dashboard";
-import AdminPage from "./pages/AdminPage";
-import AppDetailsModal from "./features/applications/AppDetailsModal"
+import AdminPage from "./pages/AdminDashboard";
+import AppDetailsModal from "./features/applications/AppDetailsModal";
 import Navbar from "./components/Navbar";
+import ApplicationFormModal from "./features/applications/ApplicationFormModal";
+import TrashPage from "./pages/trash/TrashPage";
 
 function App() {
   const { user, fetchUser, loading } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const backgroundLocation = location.state?.backgroundLocation ?? location;
 
   useEffect(() => {
@@ -44,13 +49,21 @@ function App() {
           element={user?.is_admin ? <AdminPage /> : <Navigate to="/dashboard" />}
         />
         <Route path="*" element={<Navigate to="/dashboard" />} />
+
+        <Route
+          path="/trash"
+          element={user ? <TrashPage /> : <Navigate to="/login" />}
+        />
+
       </Routes>
 
-      {/* Modal route */}
+      {/* 🧩 Modal Routes */}
       {location.state?.backgroundLocation && (
         <Routes>
           <Route path="/dashboard/app/:id" element={<AppDetailsModal />} />
         </Routes>
+
+
       )}
     </>
   );
