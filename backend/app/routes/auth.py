@@ -65,7 +65,7 @@ def login(user_in: UserLogin, response: Response, db: Session = Depends(get_db))
         value=token,
         httponly=True,
         secure=True,
-        samesite="strict",
+        samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
@@ -79,7 +79,7 @@ def logout(response: Response):
         value="",
         httponly=True,
         secure=True,
-        samesite="strict",
+        samesite="none",
         max_age=0
     )
     logger.info("User logged out and token cleared")
