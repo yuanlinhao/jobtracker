@@ -40,7 +40,7 @@ def signup(user_in: UserSignup, response: Response, db: Session = Depends(get_db
         value=token,
         httponly=True,
         secure=True,
-        samesite="strict"
+        samesite="none"
     )
 
     logger.info(f"New user signed up with email:{new_user.email} (id:{new_user.id})")
