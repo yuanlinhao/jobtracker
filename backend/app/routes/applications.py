@@ -216,6 +216,7 @@ def get_application_by_id(
         location=app.location,
         status=app.status,
         url=app.url,
+        notes=app.notes,
         created_at=app.created_at,
         updated_at=app.updated_at,
         tags=tag_map
