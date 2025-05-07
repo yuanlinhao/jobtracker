@@ -55,18 +55,29 @@ const Dashboard = () => {
     setFilterLogic("OR");
   };
 
+  const lastClickRef = useRef<number | null>(null);
+
   const handleTagClick = (id: string) => {
-    if (deleteMode) return;
-    if (selectedTags.length === 0) {
-      setSelectedTags([id]);
-      setFilterLogic("OR");
-    } else if (selectedTags.length === 1 && selectedTags[0] === id) {
-      setFilterLogic((prev) => (prev === "OR" ? "AND" : "OR"));
-    } else if (selectedTags.includes(id)) {
-      setSelectedTags((prev) => prev.filter((t) => t !== id));
-    } else {
-      setSelectedTags((prev) => [...prev, id]);
+    const now = Date.now();
+  
+    if (lastClickRef.current && now - lastClickRef.current < 300) {
+      setFilterLogic("AND");
+      if (!selectedTags.includes(id)) {
+        setSelectedTags((prev) => [...prev, id]);
+      }
+      lastClickRef.current = null;
+      return;
     }
+  
+    lastClickRef.current = now;
+  
+    setSelectedTags((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((t) => t !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
   };
 
   const handleTagDelete = async (tagId: string) => {
@@ -241,9 +252,9 @@ const Dashboard = () => {
                   if (!deleteMode) handleTagClick(tag.id);
                 }}
                 className={clsx(
-                  "relative flex items-center px-2 py-1 text-xs rounded-full border font-medium transition-all duration-150 select-none cursor-default",
+                 "relative flex items-center px-2 py-1 text-xs rounded-full border font-medium transition-all duration-150 select-none cursor-default",
                   isSelected
-                    ? "bg-white text-gray-800 border-gray-400 ring-2"
+                    ? clsx("bg-white text-gray-800 border-gray-400 ring-2", logicClass)
                     : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200",
                   deleteMode && "animate-wiggle"
                 )}
