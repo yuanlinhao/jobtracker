@@ -60,11 +60,12 @@ const Dashboard = () => {
   const handleTagClick = (id: string) => {
     const now = Date.now();
   
-    if (lastClickRef.current && now - lastClickRef.current < 300) {
-      setFilterLogic("AND");
-      if (!selectedTags.includes(id)) {
-        setSelectedTags((prev) => [...prev, id]);
-      }
+    if (
+      lastClickRef.current &&
+      now - lastClickRef.current < 300 &&
+      selectedTags.includes(id)
+    ) {
+      setFilterLogic((prev) => (prev === "AND" ? "OR" : "AND"));
       lastClickRef.current = null;
       return;
     }
@@ -79,6 +80,8 @@ const Dashboard = () => {
       }
     });
   };
+  
+  
 
   const handleTagDelete = async (tagId: string) => {
     try {
@@ -223,6 +226,7 @@ const Dashboard = () => {
 
           {tags.map((tag) => {
             const isSelected = selectedTags.includes(tag.id);
+
             const logicClass =
               filterLogic === "AND"
                 ? "ring-red-400 animate-pulse"
@@ -252,12 +256,14 @@ const Dashboard = () => {
                   if (!deleteMode) handleTagClick(tag.id);
                 }}
                 className={clsx(
-                 "relative flex items-center px-2 py-1 text-xs rounded-full border font-medium transition-all duration-150 select-none cursor-default",
-                  isSelected
-                    ? clsx("bg-white text-gray-800 border-gray-400 ring-2", logicClass)
-                    : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200",
-                  deleteMode && "animate-wiggle"
-                )}
+                "relative flex items-center px-2 py-1 text-xs rounded-full font-medium transition-all duration-150 select-none cursor-default",
+                deleteMode && "animate-wiggle",
+                isSelected
+                  ? filterLogic === "AND"
+                    ? "bg-red-50 text-red-800 border-red-400 ring-2 ring-red-500"
+                    : "bg-blue-50 text-blue-800 border-blue-400 ring-2 ring-blue-500"
+                  : "bg-gray-100 border border-gray-300 text-gray-500 hover:bg-gray-200"
+              )}
               >
                 <span className="select-none cursor-default">{tag.name}</span>
 
