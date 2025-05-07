@@ -59,11 +59,12 @@ const Dashboard = () => {
 
   const handleTagClick = (id: string) => {
     const now = Date.now();
+    const isOnlySelected = selectedTags.length === 1 && selectedTags[0] === id;
   
     if (
+      isOnlySelected &&
       lastClickRef.current &&
-      now - lastClickRef.current < 300 &&
-      selectedTags.includes(id)
+      now - lastClickRef.current < 300
     ) {
       setFilterLogic((prev) => (prev === "AND" ? "OR" : "AND"));
       lastClickRef.current = null;
@@ -74,12 +75,14 @@ const Dashboard = () => {
   
     setSelectedTags((prev) => {
       if (prev.includes(id)) {
-        return prev.filter((t) => t !== id);
+        return isOnlySelected ? prev : prev.filter((t) => t !== id);
       } else {
         return [...prev, id];
       }
     });
   };
+  
+  
   
   
 
