@@ -83,12 +83,13 @@ Click a card to edit tags, notes, or update its stage
 Use filters to quickly search by tag, role, or company
 
 ##  Roadmap
-- [ ] Multi-select drag and batch updates
+- [ ] Batch Update
 - [ ] Expanded Admin Dashboard (currently has limited access)
 - [ ] Analytics Dashboard: see conversion rates, stage duration
 - [ ] Notifications / Reminders
 - [ ] Team-based collaboration mode
 - [ ] UI overhaul
+- [ ] Mobile Support
 
 ##  About Me
 I'm Linhao Yuan, a full-stack software developer passionate about clean UX and expressive tools. I built this app during my own job hunt — turning the process into a product. If you’re hiring or have feedback, I’d love to connect.
