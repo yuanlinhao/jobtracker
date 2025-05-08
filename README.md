@@ -1,10 +1,11 @@
-# 🎯 Job Tracker App
+# Job Tracker App
 
 A modern, interactive tool for tracking job applications — built with empathy, clarity, and purpose.
 
-## 🚀 Demo
+## 🔗 Demo
 
-**Live App:** [https://main.d2zamzei6iyv8s.amplifyapp.com](https://main.d2zamzei6iyv8s.amplifyapp.com)
+**Live App:** <a href="https://main.d2zamzei6iyv8s.amplifyapp.com" target="_blank" rel="noopener noreferrer">https://main.d2zamzei6iyv8s.amplifyapp.com</a>
+
 
 **Test Login:**  
 Email: `demo@gmail.com`  
@@ -12,69 +13,83 @@ Password: `demo123123`
 
 ---
 
-## 🧠 Why This App?
+##  Motivation
 
-Most job tracking tools act like glorified spreadsheets — static, cold, and passive. But job hunting is dynamic and emotional. It's a full-time job with highs, lows, and constant motion. This app reflects that reality:
-
-- 🧩 **Drag-and-drop Kanban board** to mirror real-world progress.
-- 🔖 **Custom tagging system** to adapt to your personal strategy.
-- 💬 **Detail modals and notes** to keep track of interviews, thoughts, and follow-ups.
-- 🗑️ **Soft-deletes** to help archive past applications without losing context.
-
+Most job tracking tools act like glorified spreadsheets — static, cold, and passive. But job hunting is dynamic and emotional. It's a full-time job with highs, lows, and constant motion. I built this app to reflect that reality and to support others going through the same grind.
 
 ---
 
-## 🛠️ Tech Stack
+##  Why This App?
+
+- **Drag-and-drop Kanban board** to mirror real-world progress
+- **Custom tagging system** to adapt to your personal job hunt strategy
+- **Detail modals** for notes, follow-ups, and interviews
+- **Soft-delete system** to archive without losing historical context
+- **Fully responsive** — works great on desktop and mobile
+
+---
+
+## 🛠 Tech Stack
 
 - **Frontend:** React (Vite), TypeScript, Zustand, Tailwind CSS  
 - **Backend:** FastAPI, PostgreSQL, SQLAlchemy  
 - **Auth:** JWT (HttpOnly cookie-based)  
 - **Deployment:**  
   - Frontend: AWS Amplify  
-  - Backend: Heroku
+  - Backend: Heroku  
 
 ---
 
-## 📦 Features
+##  Features
 
-✅ User signup & login  
-✅ Create, update, and delete job applications  
-✅ Tag system for filtering  
-✅ Drag-and-drop Kanban board  
-✅ Detail view modal with inline editing  
-✅ Fully responsive UI
-
----
-
-##  In Progress / Roadmap
-
--  Batch updates for multi-select cards  
--  Admin dashboard (basic access exists)  
--  Analytics dashboard (conversion rates, stage durations)  
--  Notification / reminder system  
--  Team-based mode
+- User signup & login  
+- Create, update, and delete job applications  
+- Tag system for filtering and grouping  
+- Drag-and-drop Kanban board  
+- Detail view modal with inline editing  
+- Fully responsive UI for different screen size
 
 ---
 
-## 🔍 Demo Flow
+##  Getting Started
 
-1. **Signup/Login**  
-   Use the test account or create your own.
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/your-username/job-tracker-app.git
+   cd job-tracker-app
 
-2. **Create an application**  
-   Click “+ New Application” and enter details like company, role, status.
+2. **Frontend Setup**
+    ```cd frontend
+   npm install
+   npm run dev
+3. **Backend Setup**
+   ```cd backend
+   python -m venv venv
+   source venv/bin/activate  # or venv\Scripts\activate on Windows
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+4. **Environment Variables**
+   Set up your .env file for both frontend and backend. Backend requires DB URL, secret keys, etc.
 
-3. **Drag it between columns**  
-   Move it from “Wishlist” to “Applied,” etc.
+##  Demo Flow
+Login or sign up (use demo credentials above or create a new account)
 
-4. **Click on a card**  
-   See more info, edit tags, update notes or status.
+Create a new application with company, role, and status
 
-5. **Use filters**  
-   Quickly filter by tag, role, or company.
+Drag it between columns to track your progress
 
----
+Click a card to edit tags, notes, or update its stage
 
-## 🧑‍💻 About the Developer
+Use filters to quickly search by tag, role, or company
 
-I'm Yuan, a software developer with a passion for clean UX, expressive tools, and building useful things. This app is my way of turning my own job hunt into a project — and maybe helping others along the way.
+##  Roadmap
+- [ ] Multi-select drag and batch updates
+- [ ] Expanded Admin Dashboard (currently has limited access)
+- [ ] Analytics Dashboard: see conversion rates, stage duration
+- [ ] Notifications / Reminders
+- [ ] Team-based collaboration mode
+- [ ] UI overhaul
+
+##  About Me
+I'm Linhao Yuan, a full-stack software developer passionate about clean UX and expressive tools. I built this app during my own job hunt — turning the process into a product. If you’re hiring or have feedback, I’d love to connect.
+
