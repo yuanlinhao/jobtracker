@@ -32,7 +32,7 @@ function App() {
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen w-full overflow-x-hidden bg-gray-50">
       <Navbar />
 
       <Routes location={backgroundLocation}>
@@ -65,7 +65,7 @@ function App() {
 
 
       )}
-    </>
+    </div>
   );
 }
 

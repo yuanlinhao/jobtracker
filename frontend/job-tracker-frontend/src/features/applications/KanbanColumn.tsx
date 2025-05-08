@@ -39,7 +39,7 @@ const KanbanColumn = ({ status, apps, activeId }: Props) => {
   return (
     <div
       ref={setNodeRef}
-      className="bg-white min-w-[250px] max-w-[280px] rounded-md p-3 snap-start"
+      className="bg-white w-[280px] flex-shrink-0 rounded-md p-3 snap-start max-h-[calc(100vh-10rem)] overflow-y-auto"
     >
       <div
         className="flex justify-between items-center mb-2 cursor-pointer select-none"

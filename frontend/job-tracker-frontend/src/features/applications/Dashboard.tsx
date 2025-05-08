@@ -156,19 +156,6 @@ const Dashboard = () => {
     fetchData();
   }, [refreshKey]);
 
-  // useEffect(() => {
-  //   if (selectedTags.length === 0) {
-  //     setFilteredApps(apps);
-  //   } else {
-  //     const filtered = apps.filter((app) =>
-  //       filterLogic === "AND"
-  //         ? selectedTags.every((id) => app.tag_ids.includes(id))
-  //         : selectedTags.some((id) => app.tag_ids.includes(id))
-  //     );
-  //     setFilteredApps(filtered);
-  //   }
-  // }, [apps, selectedTags, filterLogic]);
-
   return (
     <DndContext
       onDragStart={({ active }) => {
@@ -185,7 +172,7 @@ const Dashboard = () => {
       }}
     >
       <div
-        className="p-4 space-y-4"
+        className="flex flex-col flex-1 p-4 space-y-4 overflow-hidden h-full"
         onClick={() => {
           clearSelection();
           exitDeleteMode();
@@ -318,19 +305,18 @@ const Dashboard = () => {
 
 
         {/* Kanban board */}
-        <div className="overflow-x-auto max-w-full snap-x snap-mandatory">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory">
           <div className="flex space-x-4 min-w-max px-2 pb-6">
-            //changes
             {STATUSES.map((status) => {
-  const visibleApps = apps.filter((app) => {
-    const tagMatch =
-      selectedTags.length === 0
-        ? true
-        : filterLogic === "AND"
-        ? selectedTags.every((id) => app.tag_ids.includes(id))
-        : selectedTags.some((id) => app.tag_ids.includes(id));
-    return app.status === status && tagMatch;
-  });
+            const visibleApps = apps.filter((app) => {
+              const tagMatch =
+                selectedTags.length === 0
+                  ? true
+                  : filterLogic === "AND"
+                  ? selectedTags.every((id) => app.tag_ids.includes(id))
+                  : selectedTags.some((id) => app.tag_ids.includes(id));
+              return app.status === status && tagMatch;
+            });
 
   return (
     <KanbanColumn
@@ -375,7 +361,6 @@ const Dashboard = () => {
                 tag_ids: [],
               };
               setApps((prev) => [enrichedApp, ...prev]);
-              //changes
             }}
       />      
       )}
