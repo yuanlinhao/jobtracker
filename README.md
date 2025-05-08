@@ -31,23 +31,27 @@ Most job tracking tools act like glorified spreadsheets — static, cold, and pa
 
 ## 🛠 Tech Stack
 
-- **Frontend:** React (Vite), TypeScript, Zustand, Tailwind CSS  
+- **Frontend:** React (Vite), TypeScript, Zustand, Tailwind CSS, **@dnd-kit**
 - **Backend:** FastAPI, PostgreSQL, SQLAlchemy  
 - **Auth:** JWT (HttpOnly cookie-based)  
 - **Deployment:**  
   - Frontend: AWS Amplify  
   - Backend: Heroku  
+- **Drag & Drop:** [@dnd-kit](https://dndkit.com) — accessible, performant drag-and-drop for React
 
 ---
 
 ##  Features
 
-- User signup & login  
-- Create, update, and delete job applications  
-- Tag system for filtering and grouping  
-- Drag-and-drop Kanban board  
+- JWT cookie-based user signup & login  
+- Create, update, and soft/hard-delete job applications  
+- Tag filtering system (supports both AND & OR logic via single/double click)  
+- Drag-and-drop Kanban board with group select  
 - Detail view modal with inline editing  
-- Fully responsive UI for different screen size
+- Fully responsive UI for all screen sizes  
+- Admin page (early version)  
+- Staleness bar to show application age  
+- Sortable application list  
 
 ---
 
@@ -88,8 +92,8 @@ Use filters to quickly search by tag, role, or company
 - [ ] Analytics Dashboard: see conversion rates, stage duration
 - [ ] Notifications / Reminders
 - [ ] Team-based collaboration mode
-- [ ] UI overhaul
-- [ ] Mobile Support
+- [ ] UI overhaul (polish and style refinements)
+- [ ] Enhanced mobile experience
 
 ##  About Me
 I'm Linhao Yuan, a full-stack software developer passionate about clean UX and expressive tools. I built this app during my own job hunt — turning the process into a product. If you’re hiring or have feedback, I’d love to connect.
