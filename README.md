@@ -4,7 +4,7 @@ A modern, interactive tool for tracking job applications — built with empathy,
 
 ## 🔗 Demo
 
-**Live App:** <a href="https://main.d2zamzei6iyv8s.amplifyapp.com" target="_blank" rel="noopener noreferrer">https://main.d2zamzei6iyv8s.amplifyapp.com</a>
+**Live App:** [https://main.d2zamzei6iyv8s.amplifyapp.com](https://main.d2zamzei6iyv8s.amplifyapp.com) *(Right-click → "Open in new tab")*
 
 
 **Test Login:**  
