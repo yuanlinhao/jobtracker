@@ -1,10 +1,10 @@
-// src/pages/dashboard/AppDetailsModal.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { X, Wrench, Check } from "lucide-react";
 import clsx from "clsx";
 import { useTagStore } from "../../store/useTagStore";
+
 
 type Tag = { id: string; name: string };
 type TagsByField = Record<string, Tag[]>;
@@ -98,6 +98,7 @@ const AppDetailsModal = () => {
       setApp(res.data);
       setFormData(res.data);
       setEditMode(false);
+      navigate(`/?refresh=${Date.now()}`);
     } catch (err) {
       console.error("❌ Failed to save application", err);
       alert("Error saving application.");

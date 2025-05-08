@@ -10,7 +10,7 @@ import { useTagStore } from "../../store/useTagStore";
 import { useSelectionStore } from "../../store/useSelectionStore";
 import { api } from "../../api/client";
 import { Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 
 type Application = {
@@ -28,7 +28,7 @@ const STATUSES = ["wishlist", "applied", "interviewed", "offer", "declined"] as 
 
 const Dashboard = () => {
   const [apps, setApps] = useState<Application[]>([]);
-  const [filteredApps, setFilteredApps] = useState<Application[]>([]);
+  //const [filteredApps, setFilteredApps] = useState<Application[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filterLogic, setFilterLogic] = useState<"OR" | "AND">("OR");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -39,6 +39,10 @@ const Dashboard = () => {
   const [newTagName, setNewTagName] = useState("");
   const [deleteMode, setDeleteMode] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const refreshKey = query.get("refresh");
+
 
 
   const longPressTimer = useRef<number | null>(null);
@@ -133,7 +137,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Failed to update status", err);
       alert("Failed to update. Reloading...");
-      location.reload();
+      window.location.reload();
     }
 
     clearSelection();
@@ -150,20 +154,20 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
-  useEffect(() => {
-    if (selectedTags.length === 0) {
-      setFilteredApps(apps);
-    } else {
-      const filtered = apps.filter((app) =>
-        filterLogic === "AND"
-          ? selectedTags.every((id) => app.tag_ids.includes(id))
-          : selectedTags.some((id) => app.tag_ids.includes(id))
-      );
-      setFilteredApps(filtered);
-    }
-  }, [apps, selectedTags, filterLogic]);
+  // useEffect(() => {
+  //   if (selectedTags.length === 0) {
+  //     setFilteredApps(apps);
+  //   } else {
+  //     const filtered = apps.filter((app) =>
+  //       filterLogic === "AND"
+  //         ? selectedTags.every((id) => app.tag_ids.includes(id))
+  //         : selectedTags.some((id) => app.tag_ids.includes(id))
+  //     );
+  //     setFilteredApps(filtered);
+  //   }
+  // }, [apps, selectedTags, filterLogic]);
 
   return (
     <DndContext
@@ -316,14 +320,27 @@ const Dashboard = () => {
         {/* Kanban board */}
         <div className="overflow-x-auto max-w-full snap-x snap-mandatory">
           <div className="flex space-x-4 min-w-max px-2 pb-6">
-            {STATUSES.map((status) => (
-              <KanbanColumn
-                key={status}
-                status={status}
-                apps={filteredApps.filter((app) => app.status === status)}
-                activeId={activeId}
-              />
-            ))}
+            //changes
+            {STATUSES.map((status) => {
+  const visibleApps = apps.filter((app) => {
+    const tagMatch =
+      selectedTags.length === 0
+        ? true
+        : filterLogic === "AND"
+        ? selectedTags.every((id) => app.tag_ids.includes(id))
+        : selectedTags.some((id) => app.tag_ids.includes(id));
+    return app.status === status && tagMatch;
+  });
+
+  return (
+    <KanbanColumn
+      key={status}
+      status={status}
+      apps={visibleApps}
+      activeId={activeId}
+    />
+  );
+            })}
           </div>
         </div>
       </div>
@@ -350,16 +367,16 @@ const Dashboard = () => {
 
       {showCreateModal && (
         <ApplicationFormModal
-        mode="create"
-        onClose={() => setShowCreateModal(false)}
-        onCreate={(newApp) => {
-            const enrichedApp = {
-              ...newApp,
-              tag_ids: [],
-            };
-            setApps((prev) => [enrichedApp, ...prev]);
-            setFilteredApps((prev) => [enrichedApp, ...prev]);
-          }}
+          mode="create"
+          onClose={() => setShowCreateModal(false)}
+          onCreate={(newApp) => {
+              const enrichedApp = {
+                ...newApp,
+                tag_ids: [],
+              };
+              setApps((prev) => [enrichedApp, ...prev]);
+              //changes
+            }}
       />      
       )}
     </DndContext>
